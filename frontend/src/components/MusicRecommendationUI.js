@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const MusicRecommendationUI = () => {
     const [songs, setSongs] = useState([]);
@@ -11,6 +11,7 @@ const MusicRecommendationUI = () => {
     const [uploadError, setUploadError] = useState(null);
     const [showPlaylistView, setShowPlaylistView] = useState(false);
     const [playlist, setPlaylist] = useState([]);
+    const playlistRowRefs = useRef({});
 
     // Fetch song data from JSON file
     useEffect(() => {
@@ -112,16 +113,35 @@ const MusicRecommendationUI = () => {
         return songsWithDifference.slice(0, numRecommendations);
     };
 
+    const scrollToSong = (song) => {
+        const songElement = playlistRowRefs.current[song.file_path];
+        if (songElement) {
+            songElement.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        }
+    };
+
     // Handle song selection
     const handleSongSelect = (song) => {
         setSelectedSong(song);
         const newRecommendations = calculateRecommendations(song);
         setRecommendations(newRecommendations);
+        scrollToSong(song);
     };
 
     const handleSongDoubleClick = (song) => {
         setSongs((prevSongs) => prevSongs.filter((s) => s !== song));
         setPlaylist((prevPlaylist) => [...prevPlaylist, song]);
+        setShowPlaylistView(true);
+        setTimeout(() => {
+            scrollToSong(song);
+        }, 0);
+    };
+
+    const handleRecommendationClick = (song) => {
+        scrollToSong(song);
     };
 
     // Format duration from seconds to MM:SS
@@ -236,6 +256,11 @@ const MusicRecommendationUI = () => {
                                 {playlist.map((song, index) => (
                                     <tr
                                         key={index}
+                                        ref={(el) =>
+                                            (playlistRowRefs.current[
+                                                song.file_path
+                                            ] = el)
+                                        }
                                         className="hover:bg-gray-50 cursor-pointer"
                                         onClick={() => handleSongSelect(song)}
                                     >
@@ -275,6 +300,11 @@ const MusicRecommendationUI = () => {
                                 {songs.map((song, index) => (
                                     <tr
                                         key={index}
+                                        ref={(el) =>
+                                            (playlistRowRefs.current[
+                                                song.file_path
+                                            ] = el)
+                                        }
                                         className={`hover:bg-gray-50 cursor-pointer ${getRecommendationColor(
                                             song
                                         )}`}
@@ -347,7 +377,10 @@ const MusicRecommendationUI = () => {
                                 {recommendations.map((song, index) => (
                                     <li
                                         key={index}
-                                        className="p-2 rounded bg-gray-50 hover:bg-gray-100"
+                                        className="p-2 rounded bg-gray-50 hover:bg-gray-100 cursor-pointer"
+                                        onClick={() =>
+                                            handleRecommendationClick(song)
+                                        }
                                     >
                                         <div className="font-medium">
                                             {song.title}
