@@ -8,9 +8,9 @@ from mutagen.mp4 import MP4
 from mutagen.id3 import ID3
 import datetime
 import platform
-import librosa
-import numpy as np
+import time
 import warnings
+from tqdm import tqdm
 
 # Suppress specific warnings
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -20,6 +20,10 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 def calculate_bpm(file_path):
     """Calculate BPM using librosa."""
     try:
+        # Import librosa here to avoid importing if not needed
+        import librosa
+        import numpy as np
+
         # Load audio file with librosa (using a smaller duration for faster processing)
         y, sr = librosa.load(file_path, sr=None, duration=60)
 
@@ -30,7 +34,7 @@ def calculate_bpm(file_path):
         # Round to nearest integer
         return round(tempo)
     except Exception as e:
-        print(f"Error calculating BPM for {file_path}: {e}")
+        print(f"\nError calculating BPM for {file_path}: {e}")
         return None
 
 
@@ -72,9 +76,6 @@ def extract_mp3_metadata(file_path, calculate_missing_bpm=True):
 
         # Calculate BPM if it's not in the metadata and calculation is requested
         if "bpm" not in metadata and calculate_missing_bpm:
-            print(
-                f"BPM not found in metadata, calculating for: {os.path.basename(file_path)}"
-            )
             bpm = calculate_bpm(file_path)
             if bpm:
                 metadata["bpm"] = str(bpm)
@@ -131,9 +132,6 @@ def extract_mp4_metadata(file_path, calculate_missing_bpm=True):
 
         # Calculate BPM if it's not in the metadata and calculation is requested
         if "bpm" not in metadata and calculate_missing_bpm:
-            print(
-                f"BPM not found in metadata, calculating for: {os.path.basename(file_path)}"
-            )
             bpm = calculate_bpm(file_path)
             if bpm:
                 metadata["bpm"] = str(bpm)
@@ -156,35 +154,55 @@ def scan_directory(directory, calculate_missing_bpm=True):
         sys.exit(1)
 
     print(f"Scanning directory: {directory}")
-    total_files = 0
-    processed_files = 0
 
-    # First, count the total number of MP3/MP4 files
+    # First, collect all audio files
+    audio_files = []
+    print("Finding audio files...")
     for root, _, files in os.walk(directory):
         for file in files:
             if file.lower().endswith((".mp3", ".mp4", ".m4a")):
-                total_files += 1
+                file_path = os.path.join(root, file)
+                audio_files.append((file_path, file.lower().endswith(".mp3")))
 
+    total_files = len(audio_files)
     if total_files == 0:
         print("No MP3 or MP4 files found in the directory.")
         return results
 
-    # Then process each file
-    for root, _, files in os.walk(directory):
-        for file in files:
-            file_path = os.path.join(root, file)
+    print(f"Found {total_files} audio files. Processing...")
 
-            if file.lower().endswith(".mp3"):
-                processed_files += 1
-                print(f"Processing MP3 ({processed_files}/{total_files}): {file}")
+    # Process files with progress bar
+    start_time = time.time()
+    processed_with_bpm_calc = 0
+
+    with tqdm(total=total_files, desc="Processing", unit="file") as pbar:
+        for file_path, is_mp3 in audio_files:
+            filename = os.path.basename(file_path)
+
+            # Update progress bar description
+            pbar.set_description(
+                f"Processing {filename[:20]}{'...' if len(filename) > 20 else ''}"
+            )
+
+            if is_mp3:
                 metadata = extract_mp3_metadata(file_path, calculate_missing_bpm)
-                results.append(metadata)
-
-            elif file.lower().endswith((".mp4", ".m4a")):
-                processed_files += 1
-                print(f"Processing MP4/M4A ({processed_files}/{total_files}): {file}")
+            else:
                 metadata = extract_mp4_metadata(file_path, calculate_missing_bpm)
-                results.append(metadata)
+
+            if metadata.get("bpm_calculated"):
+                processed_with_bpm_calc += 1
+
+            results.append(metadata)
+            pbar.update(1)
+
+            # Calculate and display estimated time remaining
+            elapsed = time.time() - start_time
+            files_processed = pbar.n
+            if files_processed > 0:
+                avg_time_per_file = elapsed / files_processed
+                remaining_files = total_files - files_processed
+                eta = avg_time_per_file * remaining_files
+                pbar.set_postfix(eta=f"{eta:.1f}s", bpm_calc=processed_with_bpm_calc)
 
     return results
 
@@ -256,6 +274,23 @@ def main():
     system = platform.system()
     print(f"Detected operating system: {system}")
 
+    # Check if required libraries are available
+    try:
+        import tqdm
+    except ImportError:
+        print("Warning: tqdm library not found. Installing it for progress bar...")
+        try:
+            import pip
+
+            pip.main(["install", "tqdm"])
+            import tqdm
+
+            print("tqdm installed successfully.")
+        except Exception as e:
+            print(f"Error installing tqdm: {e}")
+            print("Please install tqdm manually with: pip install tqdm")
+            print("Continuing without progress bar...")
+
     # Check if librosa is available for BPM calculation
     if not args.no_bpm_calc:
         try:
@@ -269,7 +304,7 @@ def main():
                 "Warning: librosa library not found. BPM calculation will be disabled."
             )
             print(
-                "To enable BPM calculation, install librosa with: pip install librosa"
+                "To enable BPM calculation, install librosa with: pip install librosa numpy"
             )
             args.no_bpm_calc = True
 
