@@ -49,4 +49,4 @@ Submit pull requests or open issues for improvements.
 
 ## License
 
-Specify your license here (e.g., MIT License).
+MIT

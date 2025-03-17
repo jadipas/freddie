@@ -15,8 +15,8 @@ Freddie is a Python tool designed to help DJs plan and build playlists. It scans
 1. **Clone the repository:**
 
     ```sh
-    git clone <repository-url>
-    cd <repository-directory>
+    git clone https://github.com/jadipas/freddie
+    cd ./freddie
     ```
 
 2. **Install dependencies:**
@@ -44,6 +44,6 @@ Freddie is a Python tool designed to help DJs plan and build playlists. It scans
 
 ## License
 
-Include your license information here (for example, MIT License).
+MIT
 
 Enjoy building your perfect playlist!

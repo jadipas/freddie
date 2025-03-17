@@ -9,6 +9,8 @@ const MusicRecommendationUI = () => {
     const [uploadFile, setUploadFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState(null);
+    const [showPlaylistView, setShowPlaylistView] = useState(false);
+    const [playlist, setPlaylist] = useState([]);
 
     // Fetch song data from JSON file
     useEffect(() => {
@@ -117,6 +119,11 @@ const MusicRecommendationUI = () => {
         setRecommendations(newRecommendations);
     };
 
+    const handleSongDoubleClick = (song) => {
+        setSongs((prevSongs) => prevSongs.filter((s) => s !== song));
+        setPlaylist((prevPlaylist) => [...prevPlaylist, song]);
+    };
+
     // Format duration from seconds to MM:SS
     const formatDuration = (seconds) => {
         const minutes = Math.floor(seconds / 60);
@@ -200,40 +207,103 @@ const MusicRecommendationUI = () => {
             )}
 
             {/* Main song list */}
-            <div className="flex-grow overflow-y-auto border rounded-lg shadow-md">
-                <h2 className="p-4 text-xl font-bold border-b">
-                    Music Library
-                </h2>
-                <table className="w-full">
-                    <thead className="bg-gray-100">
-                        <tr>
-                            <th className="p-2 text-left">Title</th>
-                            <th className="p-2 text-left">Duration</th>
-                            <th className="p-2 text-left">Artist</th>
-                            <th className="p-2 text-left">Genre</th>
-                            <th className="p-2 text-left">BPM</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {songs.map((song, index) => (
-                            <tr
-                                key={index}
-                                className={`hover:bg-gray-50 cursor-pointer ${getRecommendationColor(
-                                    song
-                                )}`}
-                                onClick={() => handleSongSelect(song)}
-                            >
-                                <td className="p-2 border-t">{song.title}</td>
-                                <td className="p-2 border-t">
-                                    {formatDuration(song.duration)}
-                                </td>
-                                <td className="p-2 border-t">{song.artist}</td>
-                                <td className="p-2 border-t">{song.genre}</td>
-                                <td className="p-2 border-t">{song.bpm}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+            <div className="w-full md:w-3/4 overflow-y-auto border rounded-lg shadow-md">
+                <div className="flex items-center justify-between p-4 text-xl font-bold border-b">
+                    <h2>{showPlaylistView ? "Playlist" : "Music Library"}</h2>
+                    <button
+                        className="bg-blue-500 text-white px-3 py-1 rounded"
+                        onClick={() => setShowPlaylistView(!showPlaylistView)}
+                    >
+                        Change View
+                    </button>
+                </div>
+                {showPlaylistView ? (
+                    <div>
+                        <h2 className="p-4 text-xl font-bold border-b">
+                            Sorted Playlist
+                        </h2>
+                        <table className="w-full">
+                            <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="p-2 text-left">Title</th>
+                                    <th className="p-2 text-left">Duration</th>
+                                    <th className="p-2 text-left">Artist</th>
+                                    <th className="p-2 text-left">Genre</th>
+                                    <th className="p-2 text-left">BPM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {playlist.map((song, index) => (
+                                    <tr
+                                        key={index}
+                                        className="hover:bg-gray-50 cursor-pointer"
+                                        onClick={() => handleSongSelect(song)}
+                                    >
+                                        <td className="p-2 border-t">
+                                            {song.title}
+                                        </td>
+                                        <td className="p-2 border-t">
+                                            {formatDuration(song.duration)}
+                                        </td>
+                                        <td className="p-2 border-t">
+                                            {song.artist}
+                                        </td>
+                                        <td className="p-2 border-t">
+                                            {song.genre}
+                                        </td>
+                                        <td className="p-2 border-t">
+                                            {song.bpm}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <div>
+                        <table className="w-full">
+                            <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="p-2 text-left">Title</th>
+                                    <th className="p-2 text-left">Duration</th>
+                                    <th className="p-2 text-left">Artist</th>
+                                    <th className="p-2 text-left">Genre</th>
+                                    <th className="p-2 text-left">BPM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {songs.map((song, index) => (
+                                    <tr
+                                        key={index}
+                                        className={`hover:bg-gray-50 cursor-pointer ${getRecommendationColor(
+                                            song
+                                        )}`}
+                                        onClick={() => handleSongSelect(song)}
+                                        onDoubleClick={() =>
+                                            handleSongDoubleClick(song)
+                                        }
+                                    >
+                                        <td className="p-2 border-t">
+                                            {song.title}
+                                        </td>
+                                        <td className="p-2 border-t">
+                                            {formatDuration(song.duration)}
+                                        </td>
+                                        <td className="p-2 border-t">
+                                            {song.artist}
+                                        </td>
+                                        <td className="p-2 border-t">
+                                            {song.genre}
+                                        </td>
+                                        <td className="p-2 border-t">
+                                            {song.bpm}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
 
             {/* Side panel for recommendations */}
