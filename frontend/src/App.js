@@ -1,7 +1,21 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import MusicRecommendationUI from "./components/MusicRecommendationUI";
+import StartPage from "./components/StartPage";
 
 function App() {
+    const [hasMetadata, setHasMetadata] = useState(false);
+
+    useEffect(() => {
+        fetch("/data/audio_metadata.json")
+            .then((res) => {
+                if (res.ok){
+                    console.log(res);
+                    setHasMetadata(true);
+                }else setHasMetadata(false);
+            })
+            .catch(() => setHasMetadata(false));
+    }, []);
+
     return (
         <div className="App">
             <header className="bg-blue-600 text-white p-4">
@@ -13,7 +27,7 @@ function App() {
                 </p>
             </header>
             <main className="container mx-auto py-4">
-                <MusicRecommendationUI />
+                {hasMetadata ? <MusicRecommendationUI /> : <StartPage />}
             </main>
             <footer className="bg-gray-100 p-4 text-center text-gray-600 text-sm">
                 <p>

@@ -6,10 +6,6 @@ const MusicRecommendationUI = () => {
     const [selectedSong, setSelectedSong] = useState(null);
     const [recommendations, setRecommendations] = useState([]);
     const [numRecommendations, setNumRecommendations] = useState(5);
-    const [showUploadModal, setShowUploadModal] = useState(false);
-    const [uploadFile, setUploadFile] = useState(null);
-    const [isUploading, setIsUploading] = useState(false);
-    const [uploadError, setUploadError] = useState(null);
     const [showPlaylistView, setShowPlaylistView] = useState(false);
     const [playlist, setPlaylist] = useState([]);
     const playlistRowRefs = useRef({});
@@ -28,72 +24,11 @@ const MusicRecommendationUI = () => {
             } catch (error) {
                 console.error("Error loading song data:", error);
                 setSongs([]);
-                // Show upload modal when fetch fails
-                setShowUploadModal(true);
             }
         };
 
         fetchSongs();
     }, []);
-
-    // Handle file upload
-    const handleFileChange = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            setUploadFile(e.target.files[0]);
-            setUploadError(null);
-        }
-    };
-
-    // Upload and save file
-    const handleUpload = async () => {
-        if (!uploadFile) {
-            setUploadError("Please select a file");
-            return;
-        }
-
-        // Verify it's a JSON file
-        if (!uploadFile.name.endsWith(".json")) {
-            setUploadError("Please select a JSON file");
-            return;
-        }
-
-        setIsUploading(true);
-        setUploadError(null);
-
-        try {
-            // Create form data for file upload
-            const formData = new FormData();
-            formData.append("file", uploadFile);
-
-            // Upload the file to server
-            const response = await fetch("/api/upload-metadata", {
-                method: "POST",
-                body: formData,
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to upload file");
-            }
-
-            // Read the file content to update the UI immediately
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    setSongs(data);
-                    setShowUploadModal(false);
-                } catch (err) {
-                    setUploadError("Invalid JSON format");
-                }
-            };
-            reader.readAsText(uploadFile);
-        } catch (error) {
-            console.error("Upload failed:", error);
-            setUploadError(error.message || "Upload failed");
-        } finally {
-            setIsUploading(false);
-        }
-    };
 
     // Calculate song recommendations based on BPM similarity
     const calculateRecommendations = (selectedSong) => {
@@ -189,51 +124,6 @@ const MusicRecommendationUI = () => {
 
     return (
         <div className="flex flex-col md:flex-row gap-4 p-4 h-screen">
-            {/* Upload Modal */}
-            {showUploadModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-                        <h2 className="text-xl font-bold mb-4">
-                            Audio Metadata Not Found
-                        </h2>
-                        <p className="mb-4">
-                            The audio metadata file couldn't be loaded. Please
-                            upload a JSON file with your music data.
-                        </p>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Upload audio_metadata.json
-                            </label>
-                            <input
-                                type="file"
-                                accept=".json"
-                                onChange={handleFileChange}
-                                className="w-full border border-gray-300 rounded p-2"
-                            />
-                        </div>
-
-                        {uploadError && (
-                            <div className="mb-4 text-red-500">
-                                {uploadError}
-                            </div>
-                        )}
-
-                        <div className="flex justify-end gap-2">
-                            <button
-                                onClick={handleUpload}
-                                disabled={isUploading || !uploadFile}
-                                className={`px-4 py-2 rounded ${
-                                    isUploading || !uploadFile
-                                        ? "bg-gray-300 cursor-not-allowed"
-                                        : "bg-blue-500 hover:bg-blue-600 text-white"
-                                }`}
-                            >
-                                {isUploading ? "Uploading..." : "Upload"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Main song list */}
             <div
