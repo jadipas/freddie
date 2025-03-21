@@ -1,20 +1,24 @@
 {
   "name": "freddie-frontend",
   "version": "0.1.0",
+  "main": "main.js",
   "private": true,
   "dependencies": {
+    "concurrently": "^9.1.2",
     "cra-template-pwa": "2.0.0",
+    "electron-reload": "^2.0.0-alpha.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-router-dom": "^7.4.0",
     "react-scripts": "5.0.1",
     "tailwindcss": "^3.0.0",
+    "wait-on": "^8.0.3",
     "web-vitals": "^2.1.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "react-start": "set BROWSER=none && react-scripts start",
+    "electron": "wait-on http://localhost:3000 && electron .",
+    "start": "concurrently \"npm run react-start\" \"npm run electron\""
   },
   "eslintConfig": {
     "extends": [
@@ -33,5 +37,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "electron": "^35.0.3"
   }
 }
