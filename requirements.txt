@@ -3,3 +3,7 @@ librosa
 numpy
 tqdm
 fastapi
+spotipy
+pandas
+python-dotenv
+requests
